@@ -1,6 +1,9 @@
 const express = require('express')
 const app = express()
 
+// Parse JSON bodies (as sent by API clients)
+app.use(express.json());
+
 let persons = [
     {
         "id": "1",
@@ -54,6 +57,26 @@ app.delete('/api/persons/:id', (request, response) => {
         response.status(404).send({ error: 'Person not found' });
     }
 })
+
+app.post('/api/persons', (request, response) => {
+    const body = request.body;
+
+    if (!body.name) {
+        return response.status(400).json({ error: 'Info is missing (name)' });
+    } else if (!body.number) {
+        return response.status(400).json({ error: 'Info is missing (phone number)' });
+    }
+
+    const newId = Math.floor(Math.random() * 10000000000);
+    const newPerson = {
+        id: newId.toString(),
+        name: body.name,
+        number: body.number
+    };
+
+    persons = persons.concat(newPerson);
+    response.json(newPerson);
+});
 
 app.get('/info', (request, response) => {
     const personsCount = persons.length;
