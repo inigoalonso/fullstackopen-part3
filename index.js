@@ -1,6 +1,10 @@
 const express = require('express')
 const morgan = require('morgan');
 const app = express()
+const cors = require('cors')
+
+// Enable CORS
+app.use(cors())
 
 // Parse JSON bodies (as sent by API clients)
 app.use(express.json());
