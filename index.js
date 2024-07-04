@@ -45,9 +45,14 @@ app.get('/api/persons/:id', (request, response) => {
 
 app.delete('/api/persons/:id', (request, response) => {
     const id = request.params.id
+    const initialLength = persons.length;
     persons = persons.filter(person => person.id !== id)
 
-    response.status(204).end()
+    if (persons.length < initialLength) {
+        response.status(204).end();
+    } else {
+        response.status(404).send({ error: 'Person not found' });
+    }
 })
 
 app.get('/info', (request, response) => {
