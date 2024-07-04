@@ -6,7 +6,9 @@ const app = express()
 app.use(express.json());
 
 // Morgan middleware (logging)
-app.use(morgan('tiny'));
+morgan.token('body', (req) => JSON.stringify(req.body)); // Custom token to log the body of the request
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body')); // From https://www.npmjs.com/package/morgan
+//app.use(morgan('tiny'));
 
 let persons = [
     {
