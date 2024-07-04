@@ -5,6 +5,9 @@ const app = express()
 // Parse JSON bodies (as sent by API clients)
 app.use(express.json());
 
+// Serve static files from the 'dist' directory
+app.use(express.static('dist'))
+
 // Morgan middleware (logging)
 morgan.token('body', (req) => JSON.stringify(req.body)); // Custom token to log the body of the request
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body')); // From https://www.npmjs.com/package/morgan
@@ -102,7 +105,7 @@ app.get('/info', (request, response) => {
 })
 
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
