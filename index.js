@@ -66,31 +66,45 @@ app.delete('/api/persons/:id', (request, response) => {
 app.post('/api/persons', (request, response) => {
     const body = request.body;
 
+    // Check if both name and number are missing
     if (!body.name && !body.number) {
         return response.status(400).json({ error: 'Info is missing (name and phone number)' });
-    } else if (!body.name) {
+    } 
+
+    // Check if name is missing
+    if (!body.name) {
         return response.status(400).json({ error: 'Info is missing (name)' });
-    } else if (!body.number) {
+    } 
+
+    // Check if number is missing
+    if (!body.number) {
         return response.status(400).json({ error: 'Info is missing (phone number)' });
-    }
+    } 
 
-    const foundPerson = persons.find(person => person.name === body.name);
-    if (foundPerson) {
-        return response.status(400).json({ error: 'Name already exists in the phonebook' });
-    }
+    // Check if the name already exists
+    Person.findOne({ name: body.name }).then(foundPerson => {
+        if (foundPerson) {
+            return response.status(400).json({ error: 'Name already exists in the phonebook' });
+        } 
 
-    const newId = Math.floor(Math.random() * 10000000000);
-    const newPerson = new Person({
-        id: newId.toString(),
-        name: body.name,
-        number: body.number
-    });
+        // Add new person
+        const newPerson = new Person({
+            name: body.name,
+            number: body.number
+        });
 
-    person.save().then(savedPerson => {
-        console.log(`added ${savedPerson.name} number ${savedPerson.number} to phonebook`);
-        response.json(savedPerson);
+        newPerson.save().then(savedPerson => {
+            console.log(`added ${savedPerson.name} number ${savedPerson.number} to phonebook`);
+            return response.json(savedPerson);
+        }).catch(error => {
+            return response.status(500).json({ error: 'Failed to save person to the phonebook' });
+        });
+
+    }).catch(error => {
+        return response.status(500).json({ error: 'Failed to check if name already exists in the phonebook' });
     });
 });
+
 
 app.get('/info', (request, response) => {
     const personsCount = persons.length;
