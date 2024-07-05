@@ -113,14 +113,13 @@ app.post('/api/persons', (request, response) => {
 
 
 app.get('/info', (request, response) => {
-    const personsCount = persons.length;
-    const requestTime = new Date();
-
-    response.send(`
-        <p>Phonebook has info for ${personsCount} people</p>
-        <p>${requestTime}</p>
-    `)
-})
+    Person.countDocuments({}).then(count => {
+        response.send(`
+            <p>Phonebook has info for ${count} people</p>
+            <p>${new Date()}</p>
+        `);
+    });
+});
 
 const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
