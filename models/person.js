@@ -8,8 +8,8 @@ mongoose.set('strictQuery', false)
 console.log('connecting to', url)
 mongoose
   .connect(url)
-  .then((result) => {
-    console.log('connected to MongoD. Result:', result)
+  .then(() => {
+    console.log('connected to MongoD')
   })
   .catch((error) => {
     console.log('error connecting to MongoDB:', error.message)
