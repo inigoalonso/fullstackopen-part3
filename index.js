@@ -6,24 +6,18 @@ const cors = require('cors')
 
 const Person = require('./models/person')
 
-// Enable CORS
-app.use(cors())
+// Serve static files from the 'dist' directory
+app.use(express.static('dist'))
 
 // Parse JSON bodies (as sent by API clients)
 app.use(express.json());
 
-// Serve static files from the 'dist' directory
-app.use(express.static('dist'))
-
 // Morgan middleware (logging)
 morgan.token('body', (req) => JSON.stringify(req.body)); // Custom token to log the body of the request
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body')); // From https://www.npmjs.com/package/morgan
-//app.use(morgan('tiny'));
 
-// Get command line arguments
-const password = process.argv[2];
-const name = process.argv[3];
-const number = process.argv[4];
+// Enable CORS
+app.use(cors())
 
 // Get all persons from the MongoDB
 let persons = Person.find({}).then(result => {
@@ -33,15 +27,15 @@ let persons = Person.find({}).then(result => {
     });
 });
 
-
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
 })
 
 app.get('/api/persons', (request, response) => {
     Person.find({}).then(persons => {
-        response.json(persons)
+        response.json(persons);
     })
+        .catch(error => next(error));
 })
 
 app.get('/api/persons/:id', (request, response) => {
@@ -53,21 +47,33 @@ app.get('/api/persons/:id', (request, response) => {
             response.status(404).end()
         }
     })
-        .catch(error => {
-            console.log(error)
-            response.status(400).send({ error: 'malformatted id' })
-        })
+        .catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
     const id = request.params.id
     Person.findByIdAndDelete(id).then(result => {
         response.status(204).end()
     })
-        .catch(error => {
-            console.log(error)
-            response.status(400).send({ error: 'malformatted id' })
+        .catch(error => { next(error) })
+    //     console.log(error)
+    //     response.status(400).send({ error: 'malformatted id' })
+    // })
+})
+
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+
+    const person = {
+        name: body.name,
+        number: body.number,
+    }
+
+    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+        .then(updatedNote => {
+            response.json(updatedNote)
         })
+        .catch(error => next(error))
 })
 
 app.post('/api/persons', (request, response) => {
@@ -103,13 +109,9 @@ app.post('/api/persons', (request, response) => {
         newPerson.save().then(savedPerson => {
             console.log(`added ${savedPerson.name} number ${savedPerson.number} to phonebook`);
             return response.json(savedPerson);
-        }).catch(error => {
-            return response.status(500).json({ error: 'Failed to save person to the phonebook' });
-        });
+        }).catch(error => next(error));
 
-    }).catch(error => {
-        return response.status(500).json({ error: 'Failed to check if name already exists in the phonebook' });
-    });
+    }).catch(error => next(error));
 });
 
 
@@ -123,6 +125,26 @@ app.get('/info', (request, response) => {
     `)
 })
 
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+// handler of requests with unknown endpoint
+app.use(unknownEndpoint)
+
+// Error handler middleware
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    }
+
+    next(error)
+}
+
+// this has to be the last loaded middleware, also all the routes should be registered before this!
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
