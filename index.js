@@ -47,20 +47,27 @@ app.get('/api/persons', (request, response) => {
 app.get('/api/persons/:id', (request, response) => {
     const id = request.params.id
     Person.findById(id).then(person => {
-        response.json(person)
+        if (person) {
+            response.json(person)
+        } else {
+            response.status(404).end()
+        }
     })
+        .catch(error => {
+            console.log(error)
+            response.status(400).send({ error: 'malformatted id' })
+        })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
     const id = request.params.id
-    const initialLength = persons.length;
-    persons = persons.filter(person => person.id !== id)
-
-    if (persons.length < initialLength) {
-        response.status(204).end();
-    } else {
-        response.status(404).send({ error: 'Person not found' });
-    }
+    Person.findByIdAndDelete(id).then(result => {
+        response.status(204).end()
+    })
+        .catch(error => {
+            console.log(error)
+            response.status(400).send({ error: 'malformatted id' })
+        })
 })
 
 app.post('/api/persons', (request, response) => {
@@ -69,23 +76,23 @@ app.post('/api/persons', (request, response) => {
     // Check if both name and number are missing
     if (!body.name && !body.number) {
         return response.status(400).json({ error: 'Info is missing (name and phone number)' });
-    } 
+    }
 
     // Check if name is missing
     if (!body.name) {
         return response.status(400).json({ error: 'Info is missing (name)' });
-    } 
+    }
 
     // Check if number is missing
     if (!body.number) {
         return response.status(400).json({ error: 'Info is missing (phone number)' });
-    } 
+    }
 
     // Check if the name already exists
     Person.findOne({ name: body.name }).then(foundPerson => {
         if (foundPerson) {
             return response.status(400).json({ error: 'Name already exists in the phonebook' });
-        } 
+        }
 
         // Add new person
         const newPerson = new Person({
